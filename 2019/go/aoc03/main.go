@@ -77,24 +77,7 @@ func parseInstructions(rawWireDirectionLine string) []Vector {
 	return wireDirections
 }
 
-func main() {
-	var b bytes.Buffer
-	_, err := b.ReadFrom(os.Stdin)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	rawInput := strings.TrimSpace(b.String())
-	rawWireVectorLines := strings.SplitN(rawInput, "\n", 2)
-	if len(rawWireVectorLines) != 2 {
-		log.Panic("Expecting only 2 lines of input")
-	}
-
-	wireVectorLines := make([][]Vector, 0, 2)
-	for _, rawWireVectorLines := range rawWireVectorLines {
-		wireVectorLines = append(wireVectorLines, parseInstructions(rawWireVectorLines))
-	}
-
+func part1(wireVectorLines [][]Vector) int {
 	visited := make(map[Coordinate]struct{})
 	var minCoordinate Coordinate
 	for i, wireVectors := range wireVectorLines {
@@ -115,6 +98,69 @@ func main() {
 			}
 		}
 	}
+	return minCoordinate.ManhattanDistance()
+}
 
-	log.Println("Part 1: ", minCoordinate.ManhattanDistance())
+func part2(wireVectorLines [][]Vector) int {
+	wire1CoordinateSteps := make(map[Coordinate]int)
+	wire2Visited := make(map[Coordinate]struct{})
+	var minSteps int
+
+	// Wire 1
+	{
+		var steps int
+		var coordinate Coordinate
+
+		for _, wireVector := range wireVectorLines[0] {
+			for i := 0; i < wireVector.Magnitude; i++ {
+				coordinate = wireVector.Direction.Apply(coordinate)
+				steps++
+				wire1CoordinateSteps[coordinate] = steps
+			}
+		}
+	}
+
+	// Wire 2
+	{
+		var steps int
+		var coordinate Coordinate
+
+		for _, wireVector := range wireVectorLines[1] {
+			for i := 0; i < wireVector.Magnitude; i++ {
+				coordinate = wireVector.Direction.Apply(coordinate)
+				steps++
+				if wire1Steps, ok := wire1CoordinateSteps[coordinate]; ok {
+					if _, visited := wire2Visited[coordinate]; !visited {
+						if thisSteps := wire1Steps + steps; minSteps == 0 || minSteps > thisSteps {
+							minSteps = thisSteps
+						}
+						wire2Visited[coordinate] = struct{}{}
+					}
+				}
+			}
+		}
+	}
+
+	return minSteps
+}
+
+func main() {
+	var b bytes.Buffer
+	_, err := b.ReadFrom(os.Stdin)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rawInput := strings.TrimSpace(b.String())
+	rawWireVectorLines := strings.SplitN(rawInput, "\n", 2)
+	if len(rawWireVectorLines) != 2 {
+		log.Panic("Expecting only 2 lines of input")
+	}
+	wireVectorLines := make([][]Vector, 0, 2)
+	for _, rawWireVectorLines := range rawWireVectorLines {
+		wireVectorLines = append(wireVectorLines, parseInstructions(rawWireVectorLines))
+	}
+
+	log.Println("Part 1: ", part1(wireVectorLines))
+	log.Println("Part 2: ", part2(wireVectorLines))
 }
