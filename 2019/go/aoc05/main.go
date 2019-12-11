@@ -180,5 +180,5 @@ func main() {
 		memory = append(memory, int(rawInt))
 	}
 
-	runCPU(input)
+	runCPU(memory)
 }
