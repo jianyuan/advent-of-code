@@ -48,50 +48,120 @@ func main() {
 		moons = append(moons, p)
 	}
 
+	log.Println("Part 1", part1(moons))
+	log.Println("Part 2", part2(moons))
+}
+
+func part1(moons []Point) int {
 	simulationSteps := 1000
+	copiedMoons := make([]Point, len(moons))
+	copy(copiedMoons, moons)
 	velocities := make([]Point, len(moons))
 
 	for step := 0; step < simulationSteps; step++ {
-		// fmt.Println("step", step, moons, velocities)
-
-		for i := 0; i < len(moons); i++ {
-			for j := 0; j < len(moons); j++ {
-				if i == j {
-					continue
-				}
-
-				if moons[i].X < moons[j].X {
-					velocities[i].X++
-				} else if moons[i].X > moons[j].X {
-					velocities[i].X--
-				}
-
-				if moons[i].Y < moons[j].Y {
-					velocities[i].Y++
-				} else if moons[i].Y > moons[j].Y {
-					velocities[i].Y--
-				}
-
-				if moons[i].Z < moons[j].Z {
-					velocities[i].Z++
-				} else if moons[i].Z > moons[j].Z {
-					velocities[i].Z--
-				}
-			}
-		}
-
-		for i := 0; i < len(moons); i++ {
-			moons[i].X += velocities[i].X
-			moons[i].Y += velocities[i].Y
-			moons[i].Z += velocities[i].Z
-		}
+		simulateOnce(copiedMoons, velocities)
 	}
 
 	var totalEnergy int
-	for i := 0; i < len(moons); i++ {
-		totalEnergy += moons[i].Energy() * velocities[i].Energy()
+	for i := 0; i < len(copiedMoons); i++ {
+		totalEnergy += copiedMoons[i].Energy() * velocities[i].Energy()
+	}
+	return totalEnergy
+}
+
+func GCD(a, b int) int {
+	for b != 0 {
+		t := b
+		b = a % b
+		a = t
+	}
+	return a
+}
+
+func LCM(a, b int) int {
+	return a * b / GCD(a, b)
+}
+
+func part2(initialMoons []Point) int {
+	initialVelocity := make([]Point, len(initialMoons))
+
+	var steps int
+	var cyclesX, cyclesY, cyclesZ int
+	moons := make([]Point, len(initialMoons))
+	copy(moons, initialMoons)
+	velocities := make([]Point, len(initialMoons))
+
+	for cyclesX == 0 || cyclesY == 0 || cyclesZ == 0 {
+		simulateOnce(moons, velocities)
+
+		steps++
+
+		if cyclesX == 0 && pointsEqual(moons, initialMoons, velocities, initialVelocity, func(p Point) int { return p.X }) {
+			cyclesX = steps
+		}
+
+		if cyclesY == 0 && pointsEqual(moons, initialMoons, velocities, initialVelocity, func(p Point) int { return p.Y }) {
+			cyclesY = steps
+		}
+
+		if cyclesZ == 0 && pointsEqual(moons, initialMoons, velocities, initialVelocity, func(p Point) int { return p.Z }) {
+			cyclesZ = steps
+		}
 	}
 
-	log.Println("Part 1", totalEnergy)
+	return LCM(cyclesX, LCM(cyclesY, cyclesZ))
+}
 
+func pointsEqual(a, b, c, d []Point, f func(Point) int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	if len(c) != len(d) {
+		return false
+	}
+	for i, v := range a {
+		if f(v) != f(b[i]) {
+			return false
+		}
+	}
+	for i, v := range c {
+		if f(v) != f(d[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func simulateOnce(moons []Point, velocities []Point) {
+	for i := 0; i < len(moons); i++ {
+		for j := 0; j < len(moons); j++ {
+			if i == j {
+				continue
+			}
+
+			if moons[i].X < moons[j].X {
+				velocities[i].X++
+			} else if moons[i].X > moons[j].X {
+				velocities[i].X--
+			}
+
+			if moons[i].Y < moons[j].Y {
+				velocities[i].Y++
+			} else if moons[i].Y > moons[j].Y {
+				velocities[i].Y--
+			}
+
+			if moons[i].Z < moons[j].Z {
+				velocities[i].Z++
+			} else if moons[i].Z > moons[j].Z {
+				velocities[i].Z--
+			}
+		}
+	}
+
+	for i := 0; i < len(moons); i++ {
+		moons[i].X += velocities[i].X
+		moons[i].Y += velocities[i].Y
+		moons[i].Z += velocities[i].Z
+	}
 }
