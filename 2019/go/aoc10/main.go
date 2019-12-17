@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"math"
@@ -39,7 +38,7 @@ func (p Point) DotProduct(other Point) float64 {
 }
 
 var (
-	DirectionUp = Point{0, 1}
+	DirectionUp = Point{0, -1}
 )
 
 type AngleDistance struct {
@@ -63,9 +62,10 @@ func angleAndDistance(point Point, origin Point, direction Point) AngleDistance 
 	diffProduct := direction.Y*normalisedVector.X - direction.X*normalisedVector.Y
 	angle := math.Atan2(diffProduct, dotProduct)
 
-	if angle < 0 {
-		return AngleDistance{Point: point, Origin: origin, Angle: 2*math.Pi + angle, Distance: l}
+	if angle > 0 {
+		return AngleDistance{Point: point, Origin: origin, Angle: angle - 2*math.Pi, Distance: l}
 	}
+
 	return AngleDistance{Point: point, Origin: origin, Angle: angle, Distance: l}
 }
 
@@ -76,7 +76,7 @@ func iterAsteroidsTile(m [][]Tile, f func(Point)) {
 				continue
 			}
 
-			f(Point{float64(j), float64(len(m) - 1 - i)})
+			f(Point{float64(j), float64(i)})
 		}
 	}
 }
@@ -110,6 +110,66 @@ func part1(input [][]Tile) int {
 	return maxVisible
 }
 
+func part2(input [][]Tile) int {
+	var angleDistances []AngleDistance
+	var origin Point
+	var maxVisible int
+
+	iterAsteroidsTile(input, func(point Point) {
+		visible := countVisible(input, point)
+
+		if visible > maxVisible {
+			origin = point
+			maxVisible = visible
+		}
+	})
+
+	iterAsteroidsTile(input, func(point Point) {
+		if point == origin {
+			return
+		}
+
+		angleDistance := angleAndDistance(point, origin, DirectionUp)
+		angleDistances = append(angleDistances, angleDistance)
+	})
+
+	sort.Slice(angleDistances, func(i, j int) bool {
+		if angleDistances[i].Angle > angleDistances[j].Angle {
+			return true
+		}
+		if angleDistances[i].Angle < angleDistances[j].Angle {
+			return false
+		}
+		return angleDistances[i].Distance < angleDistances[j].Distance
+	})
+
+	var i int
+	pointsSeen := make(map[AngleDistance]struct{})
+	for len(angleDistances) != len(pointsSeen) {
+		anglesSeen := make(map[float64]struct{})
+
+		for _, angleDistance := range angleDistances {
+			if _, seen := pointsSeen[angleDistance]; seen {
+				continue
+			}
+
+			if _, seen := anglesSeen[angleDistance.Angle]; seen {
+				continue
+			}
+
+			i++
+			if i == 200 {
+				return int(angleDistance.Point.X*100 + angleDistance.Point.Y)
+			}
+
+			pointsSeen[angleDistance] = struct{}{}
+			anglesSeen[angleDistance.Angle] = struct{}{}
+		}
+	}
+
+	return 0
+}
+
 var inputFilename string
 
 func init() {
@@ -134,30 +194,6 @@ func main() {
 		input = append(input, []Tile(rawInputLine))
 	}
 
-	// log.Println("Part 1:", part1(input))
-
-	// log.Println(countVisible(input, 8, 3))
-
-	origin := Point{8, 1}
-	var angleDistances []AngleDistance
-
-	iterAsteroidsTile(input, func(point Point) {
-		angleDistance := angleAndDistance(point, origin, DirectionUp)
-		// fmt.Println(angleDistance)
-		angleDistances = append(angleDistances, angleDistance)
-	})
-
-	sort.Slice(angleDistances, func(i, j int) bool {
-		if angleDistances[i].Angle < angleDistances[j].Angle {
-			return true
-		}
-		if angleDistances[i].Angle > angleDistances[j].Angle {
-			return false
-		}
-		return angleDistances[i].Distance < angleDistances[j].Distance
-	})
-
-	for _, angleDistance := range angleDistances {
-		fmt.Println(angleDistance)
-	}
+	log.Println("Part 1:", part1(input))
+	log.Println("Part 2:", part2(input))
 }
