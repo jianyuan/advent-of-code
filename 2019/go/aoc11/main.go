@@ -2,11 +2,13 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type InstructionMode func(cpu *CPU, value int, write bool) int
@@ -240,7 +242,7 @@ func init() {
 	flag.StringVar(&inputFilename, "input", "input.txt", "Input file name")
 }
 
-func part(memory []int) int {
+func part1(memory []int) int {
 	reader := &ChanInputReader{Ch: make(chan int, 1)}
 	writer := &ChanOutputWriter{Ch: make(chan int, 1)}
 	quit := make(chan struct{})
@@ -271,13 +273,80 @@ func part(memory []int) int {
 
 			case <-quit:
 				answer <- painted
-
 				return
 			}
 		}
 	}()
 
 	return len(<-answer)
+}
+
+func part2(memory []int) {
+	reader := &ChanInputReader{Ch: make(chan int, 1)}
+	writer := &ChanOutputWriter{Ch: make(chan int, 1)}
+	quit := make(chan struct{})
+
+	go func() {
+		runCPU(0, memory, reader, writer)
+		close(quit)
+	}()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		painted := make(map[Point]int)
+		painted[Point{}] = 1
+		pos := Point{}
+		direction := DirectionUp
+
+		minX, maxX := 0, 0
+		minY, maxY := 0, 0
+
+		for {
+
+			select {
+			default:
+				reader.Ch <- painted[pos]
+				color := <-writer.Ch
+				nextDirection := <-writer.Ch
+
+				painted[pos] = color
+
+				direction = DirectionTurnings[direction][nextDirection]
+				pos = pos.Add(direction)
+
+				if pos.X > maxX {
+					maxX = pos.X
+				} else if pos.X < minX {
+					minX = pos.X
+				}
+
+				if pos.Y > maxY {
+					maxY = pos.Y
+				} else if pos.Y < minY {
+					minY = pos.Y
+				}
+
+			case <-quit:
+				for i := minY; i <= maxY; i++ {
+					for j := minX; j <= maxX; j++ {
+						if painted[Point{j, i}] == 0 {
+							fmt.Print(" ")
+						} else if painted[Point{j, i}] == 1 {
+							fmt.Print("█")
+						}
+					}
+					fmt.Println()
+				}
+				return
+			}
+		}
+	}()
+
+	wg.Wait()
 }
 
 func main() {
@@ -302,5 +371,7 @@ func main() {
 		memory = append(memory, int(rawInt))
 	}
 
-	log.Println("Part 1:", part(memory))
+	log.Println("Part 1:", part1(memory))
+	log.Println("Part 2:")
+	part2(memory)
 }
