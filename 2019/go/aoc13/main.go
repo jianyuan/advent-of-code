@@ -281,35 +281,19 @@ func part2(input []int) {
 	writer := NewChanOutputWriter()
 	var t tomb.Tomb
 
-	ballCh := make(chan int)
-	paddleCh := make(chan int)
-	outputFinish := make(chan struct{})
-
-	// Output
+	// Input
 	t.Go(func() error {
-		var ballX, paddleX int
+		var score int
+		var maxX, maxY int
+		var paddleX, ballX int
+		tiles := make(map[Point]Tile)
 
 		for {
 			select {
 			case <-t.Dying():
 				return nil
 
-			case ballX = <-ballCh:
-
-			case paddleX = <-paddleCh:
-
 			case <-reader.NextCh:
-
-			loop1:
-				for {
-					select {
-					case ballX = <-ballCh:
-					case paddleX = <-paddleCh:
-					case <-outputFinish:
-						break loop1
-					}
-				}
-
 				var v int
 
 				if paddleX > ballX {
@@ -321,20 +305,6 @@ func part2(input []int) {
 				}
 
 				reader.Ch <- v
-			}
-		}
-	})
-
-	// Input
-	t.Go(func() error {
-		var score int
-		var maxX, maxY int
-		tiles := make(map[Point]Tile)
-
-		for {
-			select {
-			case <-t.Dying():
-				return nil
 
 			case x := <-writer.Ch:
 				y, id := <-writer.Ch, <-writer.Ch
@@ -353,11 +323,10 @@ func part2(input []int) {
 					t := Tiles[id]
 					tiles[p] = t
 
-					switch t {
-					case TilePaddle:
-						paddleCh <- p.X
-					case TileBall:
-						ballCh <- p.X
+					if t == TilePaddle {
+						paddleX = p.X
+					} else if t == TileBall {
+						ballX = p.X
 					}
 				}
 
@@ -371,8 +340,6 @@ func part2(input []int) {
 					tm.Println()
 				}
 				tm.Flush()
-
-			case outputFinish <- struct{}{}:
 
 			}
 		}
@@ -407,7 +374,7 @@ func main() {
 		memory = append(memory, int(rawInt))
 	}
 
-	// log.Println("Part 1:", part1(memory))
+	log.Println("Part 1:", part1(memory))
 	log.Println("Part 2:")
 	part2(memory)
 }
