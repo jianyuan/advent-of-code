@@ -94,6 +94,14 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 pyparsing = ">=2.0.2"
 
 [[package]]
+name = "parsy"
+version = "1.3.0"
+description = "easy-to-use parser combinators, for parsing in pure Python"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "pathspec"
 version = "0.8.1"
 description = "Utility library for gitignore style pattern matching of file paths."
@@ -206,7 +214,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "f0214bb8e9b8307974cad27c62aa143558f7b3c12f9cdc73eb0b962618c4b872"
+content-hash = "63528939397c1fb84b2cbc6d13fb553a0572d3c74cd33db05a958bdfd4bf2f81"
 
 [metadata.files]
 appdirs = [
@@ -243,6 +251,10 @@ mypy-extensions = [
 packaging = [
     {file = "packaging-20.7-py2.py3-none-any.whl", hash = "sha256:eb41423378682dadb7166144a4926e443093863024de508ca5c9737d6bc08376"},
     {file = "packaging-20.7.tar.gz", hash = "sha256:05af3bb85d320377db281cf254ab050e1a7ebcbf5410685a9a407e18a1f81236"},
+]
+parsy = [
+    {file = "parsy-1.3.0-py2.py3-none-any.whl", hash = "sha256:bea54186c3da470944dafe2314b57ac53d0dc2b0a168dc32f644b1b93dc6ca64"},
+    {file = "parsy-1.3.0.tar.gz", hash = "sha256:bfc941ea5a69e6ac16bd4f7d9f807bbc17e35edd8b95bcd2499a25b059359012"},
 ]
 pathspec = [
     {file = "pathspec-0.8.1-py2.py3-none-any.whl", hash = "sha256:aa0cb481c4041bf52ffa7b0d8fa6cd3e88a2ca4879c533c9153882ee2556790d"},
