@@ -16,9 +16,8 @@ def parse_data(
         dots.add((int(x), int(y)))
 
     for line in data:
-        if line.startswith("fold along "):
-            axis, value = line[len("fold along ") :].split("=")
-            folds.append((axis, int(value)))
+        axis, value = line[len("fold along ") :].split("=")
+        folds.append((axis, int(value)))
 
     return dots, folds
 
@@ -29,26 +28,16 @@ def calculate_dots(
     *,
     return_first: bool = False,
 ) -> set[tuple[int, int]]:
-    x_size = max(x for x, _ in dots) + 1
-    y_size = max(y for _, y in dots) + 1
-
     for axis, value in folds:
         new_dots: set[tuple[int, int]] = set()
 
-        if axis == "y":
-            for x, y in dots:
-                if y > value:
-                    new_dots.add((x, y_size - 1 - y))
-                else:
-                    new_dots.add((x, y))
-            y_size = value
-        else:
-            for x, y in dots:
-                if x > value:
-                    new_dots.add((x_size - 1 - x, y))
-                else:
-                    new_dots.add((x, y))
-            x_size = value
+        for x, y in dots:
+            if axis == "y" and y > value:
+                new_dots.add((x, value * 2 - y))
+            elif axis == "x" and x > value:
+                new_dots.add((value * 2 - x, y))
+            else:
+                new_dots.add((x, y))
 
         dots = new_dots
 
