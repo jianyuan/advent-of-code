@@ -56,6 +56,51 @@ def part_1():
 def part_2():
     data = get_data()
 
+    points = [(0, 0)] * 10
+    seen = set()
+
+    instructions = data[::-1]
+    while instructions:
+        direction, value = instructions.pop()
+
+        for _ in range(value):
+            head = points[0]
+            match direction:
+                case "L":
+                    head = (head[0] - 1, head[1])
+                case "R":
+                    head = (head[0] + 1, head[1])
+                case "U":
+                    head = (head[0], head[1] + 1)
+                case "D":
+                    head = (head[0], head[1] - 1)
+            points[0] = head
+
+            previous_point = points[0]
+            for i in range(1, len(points)):
+                point = points[i]
+                if (
+                    abs(previous_point[0] - point[0]) == 2
+                    and abs(previous_point[1] - point[1]) == 2
+                ):
+                    # Diagonal
+                    points[i] = (
+                        (previous_point[0] + point[0]) // 2,
+                        (previous_point[1] + point[1]) // 2,
+                    )
+                elif abs(previous_point[0] - point[0]) == 2:
+                    # Left/Right
+                    points[i] = ((previous_point[0] + point[0]) // 2, previous_point[1])
+                elif abs(previous_point[1] - point[1]) == 2:
+                    # Up/Down
+                    points[i] = (previous_point[0], (previous_point[1] + point[1]) // 2)
+
+                previous_point = points[i]
+
+            seen.add(points[-1])
+
+    return len(seen)
+
 
 def main():
     print("Part 1:", part_1())
