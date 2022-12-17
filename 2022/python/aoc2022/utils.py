@@ -1,6 +1,11 @@
 from pathlib import Path
 
 
+def read_file(filename):
+    p = Path(__file__).parent / "data" / filename
+    return p.read_text()
+
+
 def read_lines_from_file_iter(filename, *, cast=None, strip=True):
     p = Path(__file__).parent / "data" / filename
     with p.open() as f:
