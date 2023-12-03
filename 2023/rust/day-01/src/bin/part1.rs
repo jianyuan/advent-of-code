@@ -1,10 +1,10 @@
 fn main() {
-    let input = include_str!("./input1.txt");
-    let output = part1(input);
+    let input = include_str!("./input.txt");
+    let output = solve(input);
     dbg!(output);
 }
 
-fn part1(input: &str) -> String {
+fn solve(input: &str) -> u32 {
     input
         .lines()
         .map(|line| {
@@ -14,7 +14,6 @@ fn part1(input: &str) -> String {
             first * 10 + last
         })
         .sum::<u32>()
-        .to_string()
 }
 
 #[cfg(test)]
@@ -22,13 +21,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_part1() {
-        let result = part1(
+    fn test_example() {
+        let result = solve(
             "1abc2
 pqr3stu8vwx
 a1b2c3d4e5f
 treb7uchet",
         );
-        assert_eq!(result, "142");
+        assert_eq!(result, 142);
     }
 }
