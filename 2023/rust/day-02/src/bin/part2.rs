@@ -1,6 +1,6 @@
 fn main() {
-    let input = include_str!("./input1.txt");
-    let output = solution(input);
+    let input = include_str!("./input.txt");
+    let output = solve(input);
     dbg!(output);
 }
 
@@ -10,7 +10,7 @@ struct Game {
     rounds: Vec<Round>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Round {
     red: u32,
     green: u32,
@@ -26,10 +26,6 @@ impl Round {
         }
     }
 
-    fn contains(&self, other: &Round) -> bool {
-        self.red >= other.red && self.green >= other.green && self.blue >= other.blue
-    }
-
     fn power(&self) -> u32 {
         self.red * self.green * self.blue
     }
@@ -39,46 +35,40 @@ fn parse(input: &str) -> Vec<Game> {
     input
         .lines()
         .map(|line| {
-            let tokens = line.split(": ").collect::<Vec<_>>();
-            let id = tokens[0]
-                .split(' ')
-                .skip(1)
-                .next()
-                .unwrap()
-                .parse::<u32>()
-                .unwrap();
+            let tokens: (&str, &str) = line.split_once(": ").unwrap();
+            let id = tokens.0.split_once(' ').unwrap().1.parse::<u32>().unwrap();
 
-            let rounds = tokens[1]
+            let rounds = tokens
+                .1
                 .split("; ")
-                .collect::<Vec<_>>()
-                .iter()
+                .into_iter()
                 .map(|token| {
-                    token.split(", ").collect::<Vec<_>>().iter().fold(
-                        Round::empty(),
-                        |mut round, token| {
-                            let mut tokens = token.split(' ');
-                            let num = tokens.next().unwrap().parse::<u32>().unwrap();
-                            let color = tokens.next().unwrap();
+                    token
+                        .split(", ")
+                        .into_iter()
+                        .fold(Round::default(), |mut round, token| {
+                            let tokens = token.split_once(' ').unwrap();
+                            let num = tokens.0.parse::<u32>().unwrap();
+                            let color = tokens.1;
 
                             match color {
                                 "red" => round.red += num,
                                 "green" => round.green += num,
                                 "blue" => round.blue += num,
-                                _ => panic!("invalid color"),
+                                _ => unreachable!(),
                             }
 
                             round
-                        },
-                    )
+                        })
                 })
-                .collect::<Vec<_>>();
+                .collect();
 
             Game { id, rounds }
         })
         .collect()
 }
 
-fn solution(input: &str) -> String {
+fn solve(input: &str) -> u32 {
     let games = parse(input);
 
     games
@@ -93,8 +83,7 @@ fn solution(input: &str) -> String {
                 })
                 .power()
         })
-        .sum::<u32>()
-        .to_string()
+        .sum()
 }
 
 #[cfg(test)]
@@ -102,14 +91,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_solution() {
-        let result = solution(
+    fn text_example() {
+        let result = solve(
             "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
 Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
 Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
 Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
 Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green",
         );
-        assert_eq!(result, "2286");
+        assert_eq!(result, 2286);
     }
 }
