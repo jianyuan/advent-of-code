@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 fn main() {
     let input = include_str!("./input.txt");
@@ -40,7 +40,7 @@ fn solve(input: &str) -> u32 {
                         .parse::<u32>()
                         .unwrap();
 
-                    let mut seen = Vec::new();
+                    let mut seen = HashSet::new();
                     for x in start..end {
                         for (dx, dy) in DIRECTIONS.iter() {
                             let nx = x as isize + dx;
@@ -55,7 +55,7 @@ fn solve(input: &str) -> u32 {
                                 if *c == '*' && !seen.contains(&(nx, ny)) {
                                     let ratio = gear_ratios.entry((nx, ny)).or_insert(Vec::new());
                                     ratio.push(value);
-                                    seen.push((nx, ny));
+                                    seen.insert((nx, ny));
                                 }
                             }
                         }
