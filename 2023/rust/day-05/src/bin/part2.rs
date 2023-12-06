@@ -1,3 +1,5 @@
+use std::ops::RangeInclusive;
+
 fn main() {
     let input = include_str!("./input.txt");
     let output = solve(input);
@@ -8,7 +10,61 @@ fn main() {
 struct Mapping {
     src: std::ops::RangeInclusive<i64>,
     dest: std::ops::RangeInclusive<i64>,
-    len: i64,
+}
+
+impl Mapping {
+    fn apply_to_range(
+        &self,
+        range: &RangeInclusive<i64>,
+    ) -> (Vec<RangeInclusive<i64>>, Vec<RangeInclusive<i64>>) {
+        let mut old_ranges = Vec::new();
+        let mut new_ranges = Vec::new();
+        let r_start = *range.start();
+        let r_end = *range.end();
+        let src_start = *self.src.start();
+        let src_end = *self.src.end();
+        let dest_start = *self.dest.start();
+        let dest_end = *self.dest.end();
+
+        if (r_start > src_start && r_start > src_end) || (r_start < src_start && r_end < src_start)
+        {
+            // No overlap
+            // range   :  o--o
+            // or range:            o--o
+            // source  :       o--o
+            dbg!("case 1");
+            old_ranges.push(range.clone());
+        } else if r_start >= src_start && r_end <= src_end {
+            // range :   o--o
+            // source: o------o
+            dbg!("case 2");
+            new_ranges.push((r_start - src_start + dest_start)..=(r_end + dest_start - src_start))
+        } else if r_start <= src_start && r_end <= src_end {
+            // range : o-----o
+            // source:    o-----o
+            dbg!("case 3");
+            old_ranges.push(r_start..=(src_start - 1));
+            new_ranges.push(dest_start..=(r_end - src_start + dest_start));
+        } else if r_start >= src_start && r_end >= src_end {
+            // range :    o-----o
+            // source: o-----o
+            dbg!("case 4");
+            old_ranges.push(src_end..=r_end);
+            new_ranges.push(r_start - src_start + dest_start..=dest_end);
+        } else if r_start <= src_start && r_end >= src_end {
+            // Full overlap
+            // range : o------o
+            // source:   o--o
+            dbg!("case 5");
+            old_ranges.push(r_start..=src_start - 1);
+            old_ranges.push(src_end + 1..=r_end);
+            new_ranges.push(self.dest.clone());
+        } else {
+            unreachable!();
+        }
+
+        (old_ranges, new_ranges)
+    }
 }
 
 fn solve(input: &str) -> i64 {
@@ -34,7 +90,6 @@ fn solve(input: &str) -> i64 {
                     Mapping {
                         src: src_start..=src_start + len,
                         dest: dest_start..=dest_start + len,
-                        len,
                     }
                 })
                 .collect::<Vec<_>>()
@@ -43,13 +98,13 @@ fn solve(input: &str) -> i64 {
 
     let seed_ranges = seeds
         .chunks(2)
-        .map(|d| vec![d[0]..=d[0] + d[1] - 1])
+        .map(|d| d[0]..=d[0] + d[1] - 1)
         .collect::<Vec<_>>();
 
-    let ranges = seed_ranges
+    let final_seed_ranges = seed_ranges
         .iter()
         .map(|ranges| {
-            let mut final_ranges = ranges.clone();
+            let mut final_ranges = vec![ranges.clone()];
             for mapping in &mappings {
                 let mut new_ranges = Vec::new();
                 let mut current_ranges = final_ranges.clone();
@@ -58,37 +113,10 @@ fn solve(input: &str) -> i64 {
                     for range in &current_ranges {
                         dbg!(&range, m);
 
-                        if (range.start() > m.src.start() && range.start() > m.src.end())
-                            || (range.start() < m.src.start() && range.end() < m.src.start())
-                        {
-                            dbg!("case 1");
-                            old_ranges.push(range.clone());
-                        } else if range.start() >= m.src.start() && range.end() <= m.src.end() {
-                            dbg!("case 2");
-                            new_ranges.push(
-                                (*range.start() - m.src.start() + m.dest.start())
-                                    ..=(*range.end() + m.dest.start() - m.src.start()),
-                            )
-                        } else if range.start() <= m.src.start() && range.end() <= m.src.end() {
-                            dbg!("case 3");
-                            old_ranges.push(*range.start()..=(*m.src.start() - 1));
-                            new_ranges.push(
-                                *m.dest.start()..=(*range.end() - *m.src.start() + *m.dest.start()),
-                            );
-                        } else if range.start() >= m.src.start() && range.end() >= m.src.end() {
-                            dbg!("case 4");
-                            old_ranges.push(*m.src.end()..=*range.end());
-                            new_ranges.push(
-                                *range.start() - *m.src.start() + *m.dest.start()..=*m.dest.end(),
-                            );
-                        } else if range.start() <= m.src.start() && range.end() >= m.src.end() {
-                            dbg!("case 5");
-                            old_ranges.push(*range.start()..=*m.src.start() - 1);
-                            old_ranges.push(*m.src.end() + 1..=*range.end());
-                            new_ranges.push(m.dest.clone());
-                        } else {
-                            unreachable!();
-                        }
+                        let res = dbg!(m.apply_to_range(&range));
+                        old_ranges.extend(res.0);
+                        new_ranges.extend(res.1);
+
                         dbg!(&new_ranges);
                         dbg!(&old_ranges);
                     }
@@ -97,12 +125,18 @@ fn solve(input: &str) -> i64 {
 
                 new_ranges.extend(current_ranges);
                 final_ranges = new_ranges;
+                dbg!(&final_ranges);
             }
             final_ranges
         })
         .collect::<Vec<_>>();
 
-    ranges.iter().flatten().map(|r| *r.start()).min().unwrap()
+    final_seed_ranges
+        .iter()
+        .flatten()
+        .map(|r| *r.start())
+        .min()
+        .unwrap()
 }
 
 #[cfg(test)]
