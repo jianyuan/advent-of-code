@@ -4,6 +4,13 @@ fn main() {
     dbg!(output);
 }
 
+#[derive(Debug)]
+struct Mapping {
+    src: std::ops::RangeInclusive<i64>,
+    dest: std::ops::RangeInclusive<i64>,
+    len: i64,
+}
+
 fn solve(input: &str) -> i64 {
     let (seeds, input) = input.split_once("\n\n").unwrap();
     let seeds = seeds
@@ -21,10 +28,14 @@ fn solve(input: &str) -> i64 {
                 .skip(1)
                 .map(|s| s.split_whitespace().map(|s| s.parse::<i64>().unwrap()))
                 .map(|mut d| {
-                    let dest = d.next().unwrap();
-                    let src = d.next().unwrap();
-                    let len = d.next().unwrap();
-                    (src..=src + len, dest..=dest + len)
+                    let dest_start = d.next().unwrap();
+                    let src_start = d.next().unwrap();
+                    let len: i64 = d.next().unwrap();
+                    Mapping {
+                        src: src_start..=src_start + len,
+                        dest: dest_start..=dest_start + len,
+                        len,
+                    }
                 })
                 .collect::<Vec<_>>()
         })
@@ -42,53 +53,39 @@ fn solve(input: &str) -> i64 {
             for mapping in &mappings {
                 let mut new_ranges = Vec::new();
                 let mut current_ranges = final_ranges.clone();
-                for translation in mapping {
+                for m in mapping {
                     let mut old_ranges = Vec::new();
                     for range in &current_ranges {
-                        dbg!(&range, translation);
+                        dbg!(&range, m);
 
-                        if (range.start() > translation.0.start()
-                            && range.start() > translation.0.end())
-                            || (range.start() < translation.0.start()
-                                && range.end() < translation.0.start())
+                        if (range.start() > m.src.start() && range.start() > m.src.end())
+                            || (range.start() < m.src.start() && range.end() < m.src.start())
                         {
                             dbg!("case 1");
                             old_ranges.push(range.clone());
-                        } else if range.start() >= translation.0.start()
-                            && range.end() <= translation.0.end()
-                        {
+                        } else if range.start() >= m.src.start() && range.end() <= m.src.end() {
                             dbg!("case 2");
                             new_ranges.push(
-                                (*range.start() - translation.0.start() + translation.1.start())
-                                    ..=(*range.end() + translation.1.start()
-                                        - translation.0.start()),
+                                (*range.start() - m.src.start() + m.dest.start())
+                                    ..=(*range.end() + m.dest.start() - m.src.start()),
                             )
-                        } else if range.start() <= translation.0.start()
-                            && range.end() <= translation.0.end()
-                        {
+                        } else if range.start() <= m.src.start() && range.end() <= m.src.end() {
                             dbg!("case 3");
-                            old_ranges.push(*range.start()..=(*translation.0.start() - 1));
+                            old_ranges.push(*range.start()..=(*m.src.start() - 1));
                             new_ranges.push(
-                                *translation.1.start()
-                                    ..=(*range.end() - *translation.0.start()
-                                        + *translation.1.start()),
+                                *m.dest.start()..=(*range.end() - *m.src.start() + *m.dest.start()),
                             );
-                        } else if range.start() >= translation.0.start()
-                            && range.end() >= translation.0.end()
-                        {
+                        } else if range.start() >= m.src.start() && range.end() >= m.src.end() {
                             dbg!("case 4");
-                            old_ranges.push(*translation.0.end()..=*range.end());
+                            old_ranges.push(*m.src.end()..=*range.end());
                             new_ranges.push(
-                                *range.start() - *translation.0.start() + *translation.1.start()
-                                    ..=*translation.1.end(),
+                                *range.start() - *m.src.start() + *m.dest.start()..=*m.dest.end(),
                             );
-                        } else if range.start() <= translation.0.start()
-                            && range.end() >= translation.0.end()
-                        {
+                        } else if range.start() <= m.src.start() && range.end() >= m.src.end() {
                             dbg!("case 5");
-                            old_ranges.push(*range.start()..=*translation.0.start() - 1);
-                            old_ranges.push(*translation.0.end() + 1..=*range.end());
-                            new_ranges.push(translation.1.clone());
+                            old_ranges.push(*range.start()..=*m.src.start() - 1);
+                            old_ranges.push(*m.src.end() + 1..=*range.end());
+                            new_ranges.push(m.dest.clone());
                         } else {
                             unreachable!();
                         }
