@@ -1,3 +1,5 @@
+use std::iter::once;
+
 fn main() {
     let input = include_str!("./input.txt");
     let output = solve(input);
@@ -15,34 +17,82 @@ fn solve(input: &str) -> u32 {
                 .map(|s| s.parse::<u32>().unwrap())
                 .collect::<Vec<_>>();
 
-            // Brute force all possible records
-            let mut possible_records: Vec<Vec<char>> = Vec::new();
-            possible_records.push(vec![]);
+            let mut possible_records: Vec<(Vec<char>, Vec<u32>)> = Vec::new();
+            possible_records.push((vec![], damaged.iter().rev().cloned().collect()));
 
             for i in 0..records.len() {
-                let mut next_records: Vec<Vec<char>> = Vec::new();
-                match records[i] {
-                    '?' => {
-                        next_records.extend(
-                            possible_records
-                                .iter()
-                                .map(|r| r.iter().cloned().chain(vec!['.']).collect())
-                                .collect::<Vec<_>>(),
-                        );
-                        next_records.extend(
-                            possible_records
-                                .iter()
-                                .map(|r| r.iter().cloned().chain(vec!['#']).collect())
-                                .collect::<Vec<_>>(),
-                        );
-                    }
-                    _ => {
-                        next_records.extend(
-                            possible_records
-                                .iter()
-                                .map(|r| r.iter().cloned().chain(vec![records[i]]).collect())
-                                .collect::<Vec<_>>(),
-                        );
+                let mut next_records: Vec<(Vec<char>, Vec<u32>)> = Vec::new();
+
+                for (record, damaged) in possible_records.iter() {
+                    match (&records[i], record.last(), damaged.last()) {
+                        ('?', None | Some('.'), Some(d)) if *d > 0 => {
+                            next_records.push((
+                                record.iter().cloned().chain(once('#')).collect(),
+                                damaged
+                                    .iter()
+                                    .take(damaged.len() - 1)
+                                    .cloned()
+                                    .chain(once(d - 1))
+                                    .collect(),
+                            ));
+                            next_records.push((
+                                record.iter().cloned().chain(once('.')).collect(),
+                                damaged.clone(),
+                            ));
+                        }
+                        ('?', Some('#'), Some(d)) if *d > 0 => {
+                            next_records.push((
+                                record.iter().cloned().chain(once('#')).collect(),
+                                damaged
+                                    .iter()
+                                    .take(damaged.len() - 1)
+                                    .cloned()
+                                    .chain(once(d - 1))
+                                    .collect(),
+                            ));
+                        }
+                        ('?', Some('#'), Some(0)) => {
+                            next_records.push((
+                                record.iter().cloned().chain(once('.')).collect(),
+                                damaged.iter().take(damaged.len() - 1).cloned().collect(),
+                            ));
+                        }
+                        ('.', Some('#'), Some(d)) if *d > 0 => {
+                            // Invalid
+                        }
+                        ('.', Some('#'), Some(0)) => {
+                            next_records.push((
+                                record.iter().cloned().chain(once('.')).collect(),
+                                damaged.iter().take(damaged.len() - 1).cloned().collect(),
+                            ));
+                        }
+                        ('.', None | Some('.'), Some(d)) if *d > 0 => {
+                            next_records.push((
+                                record.iter().cloned().chain(once('.')).collect(),
+                                damaged.clone(),
+                            ));
+                        }
+                        ('.' | '?', Some('.'), None) => {
+                            next_records.push((
+                                record.iter().cloned().chain(once('.')).collect(),
+                                damaged.clone(),
+                            ));
+                        }
+                        ('#', None | Some('#' | '.'), Some(d)) if *d > 0 => {
+                            next_records.push((
+                                record.iter().cloned().chain(once('#')).collect(),
+                                damaged
+                                    .iter()
+                                    .take(damaged.len() - 1)
+                                    .cloned()
+                                    .chain(once(d - 1))
+                                    .collect(),
+                            ));
+                        }
+                        ('#', Some('#' | '.'), None | Some(0)) => {
+                            // Invalid
+                        }
+                        _ => unreachable!(),
                     }
                 }
 
@@ -51,37 +101,7 @@ fn solve(input: &str) -> u32 {
 
             possible_records
                 .iter()
-                .filter(|record| {
-                    let mut damaged = damaged.clone().into_iter().rev().collect::<Vec<_>>();
-                    let mut current = 0;
-
-                    for i in 0..record.len() {
-                        let last = if i > 0 { Some(record[i - 1]) } else { None };
-                        match (last, record[i]) {
-                            (Some('#'), '.') => {
-                                if current > 0 {
-                                    return false;
-                                }
-                            }
-                            (Some('#'), '#') => {
-                                if current == 0 {
-                                    return false;
-                                }
-                                current -= 1;
-                            }
-                            (None | Some('.'), '#') => {
-                                if current > 0 || damaged.is_empty() {
-                                    return false;
-                                }
-                                current = damaged.pop().unwrap() - 1;
-                            }
-                            (None | Some('.'), '.') => {}
-                            _ => unimplemented!("{:?} {} {:?}", last, record[i], damaged),
-                        }
-                    }
-
-                    current == 0 && damaged.is_empty()
-                })
+                .filter(|(_, damaged)| damaged.is_empty() || damaged.get(0) == Some(&0))
                 .count() as u32
         })
         .sum::<u32>()
@@ -102,6 +122,6 @@ mod tests {
 ????.######..#####. 1,6,5
 ?###???????? 3,2,1",
         );
-        assert_eq!(result, 21);
+        assert_eq!(result, 525152);
     }
 }
