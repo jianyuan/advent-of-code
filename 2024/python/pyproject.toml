@@ -1,0 +1,5 @@
+[project]
+name = "advent-of-code-2024"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = ["numpy>=2.3.3", "pydantic>=2.11.9"]
