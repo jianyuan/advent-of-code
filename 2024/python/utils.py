@@ -12,3 +12,7 @@ def read_lines_iter(filename: str, *, cast: Callable[[str], T] = str) -> Iterato
 
 def read_lines(filename: str, *, cast: Callable[[str], T] = str) -> list[T]:
     return list(read_lines_iter(filename, cast=cast))
+
+
+def read_line(filename: str, *, cast: Callable[[str], T] = str) -> T:
+    return next(read_lines_iter(filename, cast=cast))
