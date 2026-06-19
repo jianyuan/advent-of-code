@@ -7,7 +7,7 @@ T = TypeVar("T")
 def read_lines_iter(filename: str, *, cast: Callable[[str], T] = str) -> Iterator[T]:
     with pathlib.Path(filename).open() as f:
         for line in f:
-            yield cast(line.strip())
+            yield cast(line.rstrip("\r\n"))
 
 
 def read_lines(filename: str, *, cast: Callable[[str], T] = str) -> list[T]:
